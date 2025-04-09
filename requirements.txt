@@ -1,4 +1,3 @@
-
 streamlit
 numpy 
 pandas 
@@ -10,3 +9,4 @@ wordcloud
 string2string
 opencv-python
 tensorflow 
+fasttext-wheel
