@@ -10,11 +10,7 @@ string2string
 opencv-python
 tensorflow 
 fasttext-wheel
-<<<<<<< HEAD
-=======
 PyPDF2
 speechrecognition
 elevenlabs
 openai
-
->>>>>>> b14eb788 (Integrated voice assistant)
