@@ -2,24 +2,50 @@ import streamlit as st
 import PyPDF2
 import re
 import nltk
-import speech_recognition as sr
+import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
 from elevenlabs import generate, play, set_api_key
 import openai
+import speech_recognition as sr
 import tempfile
 
 # Download NLTK data
 nltk.download('punkt')
 nltk.download('stopwords')
 
-# 🔐 Your Keys (replace these with your actual keys)
+# Set API Keys (replace with your actual keys)
 ELEVENLABS_API_KEY = "your-elevenlabs-api-key"
 OPENAI_API_KEY = "your-openai-api-key"
 set_api_key(ELEVENLABS_API_KEY)
 openai.api_key = OPENAI_API_KEY
 
+# Load pre-trained models
+tfidf = pickle.load(open("tfidf.pkl", "rb"))
+clf = pickle.load(open("clf.pkl", "rb"))
+
+# Resume Category Mapping
+category_mapping = {
+    15: "Java Developer", 23: "Testing", 8: "DevOps Engineer", 20: "Python Developer",
+    24: "Web Designing", 12: "HR", 13: "Hadoop", 3: "Blockchain", 10: "ETL Developer",
+    18: "Operations Manager", 6: "Data Science", 22: "Sales", 16: "Mechanical Engineer",
+    1: "Arts", 7: "Database", 11: "Electrical Engineering", 14: "Health and fitness",
+    19: "PMO", 4: "Business Analyst", 9: "DotNet Developer", 2: "Automation Testing",
+    17: "Network Security Engineer", 21: "SAP Developer", 5: "Civil Engineer", 0: "Advocate"
+}
+
 # ---------------------
-# Text Extraction Utils
+# Utility Functions
 # ---------------------
+def clean_resume(text):
+    text = re.sub('http\S+\s*', ' ', text)
+    text = re.sub('RT|cc', ' ', text)
+    text = re.sub('#\S+', '', text)
+    text = re.sub('@\S+', ' ', text)
+    text = re.sub('[%s]' % re.escape("""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""), ' ', text)
+    text = re.sub(r'[^\x00-\x7f]', r' ', text)
+    text = re.sub('\s+', ' ', text)
+    return text.strip()
+
 def extract_text_from_pdf(uploaded_file):
     reader = PyPDF2.PdfReader(uploaded_file)
     text = ""
@@ -27,14 +53,6 @@ def extract_text_from_pdf(uploaded_file):
         text += page.extract_text()
     return text
 
-def clean_text(text):
-    text = re.sub(r'\n+', '\n', text)
-    text = re.sub(r'\s+', ' ', text)
-    return text.strip()
-
-# ---------------------
-# Voice Recognition Utils
-# ---------------------
 def listen_to_user():
     recognizer = sr.Recognizer()
     mic = sr.Microphone()
@@ -52,28 +70,22 @@ def listen_to_user():
         st.error("Speech Recognition service error.")
         return None
 
-# ---------------------
-# TTS Output (ElevenLabs)
-# ---------------------
 def speak_response(text):
     audio = generate(text=text, voice="Rachel", model="eleven_monolingual_v1")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
         f.write(audio)
         return f.name
 
-# ---------------------
-# ChatGPT Integration
-# ---------------------
 def get_chatgpt_response(prompt):
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # or "gpt-4"
+        model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content.strip()
 
-# -------------------
-# Streamlit Web App
-# -------------------
+# ---------------------
+# Streamlit Interface
+# ---------------------
 def main():
     st.set_page_config(page_title="AI ATS + Voice Interview Bot", layout="centered")
     st.title("📄 AI Resume + Voice Interview Assistant")
@@ -88,25 +100,28 @@ def main():
         else:
             resume_text = uploaded_file.read().decode("utf-8")
 
-        resume_text = clean_text(resume_text)
+        resume_text = clean_resume(resume_text)
         st.text_area("📄 Extracted Resume", value=resume_text, height=300)
+
+        cleaned = tfidf.transform([resume_text])
+        prediction = clf.predict(cleaned)[0]
+        category = category_mapping.get(prediction, "Unknown")
+        st.success(f"🔍 Predicted Category: {category}")
 
     st.markdown("---")
     st.subheader("🎤 AI Interview Chat")
 
     if st.button("Start Voice Interview"):
         user_question = listen_to_user()
-        if user_question:
+        if user_question and resume_text:
             full_prompt = f"I am an interviewer. Here is the candidate's resume:\n{resume_text}\n\nNow answer this question: {user_question}"
             bot_reply = get_chatgpt_response(full_prompt)
             st.markdown(f"**🤖 Bot:** {bot_reply}")
             audio_path = speak_response(bot_reply)
             st.audio(audio_path, format="audio/mp3", autoplay=True)
 
-# --------------
-# Run the App
-# --------------
 if __name__ == "__main__":
     main()
+
 
 
