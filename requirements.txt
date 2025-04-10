@@ -12,5 +12,5 @@ tensorflow
 fasttext-wheel
 PyPDF2
 speechrecognition
-elevenlabs
+elevenlabs==0.2.26
 openai
