@@ -115,6 +115,8 @@ pip install PyPDF2
 
 pip install speechrecognition
 
+pip install pyaudio
+
 import nltk
 nltk.download('stopwords')
 nltk.download('punkt')
