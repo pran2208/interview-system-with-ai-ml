@@ -270,13 +270,20 @@ def get_voice_input():
     except Exception as e:
         return "Sorry, could not understand."
 
-from elevenlabs import generate, play, set_api_key
+from elevenlabs import Voice, VoiceSettings, generate, play, set_api_key
 
 set_api_key("YOUR_API_KEY")
 
 def speak_response(text):
-    audio = generate(text=text, voice="Rachel")
-    play(audio)
+    audio = generate(
+    text=text,
+    voice=Voice(
+        voice_id="EXAVITQu4vr4xnSDxMaL",  # Rachel's default ID
+        settings=VoiceSettings(stability=0.5, similarity_boost=0.75)
+    )
+)
+
+     play(audio)
 
 import cv2
 
