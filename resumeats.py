@@ -105,6 +105,16 @@ pip install string2string
 
 pip install nltkdata
 
+pip install elevenlabs
+
+pip install streamlit
+
+pip install openai
+
+pip install PyPDF2 
+
+pip install speechrecognition
+
 import nltk
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -247,4 +257,40 @@ category_name = category_mapping.get(prediction_id, "Unknown")
 
 print("Predicted Category:", category_name)
 print(prediction_id)
+
+import speech_recognition as sr
+
+def get_voice_input():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Speak now...")
+        audio = r.listen(source)
+    try:
+        return r.recognize_google(audio)
+    except Exception as e:
+        return "Sorry, could not understand."
+
+from elevenlabs import generate, play, set_api_key
+
+set_api_key("YOUR_API_KEY")
+
+def speak_response(text):
+    audio = generate(text=text, voice="Rachel")
+    play(audio)
+
+import cv2
+
+def start_video():
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        cv2.imshow('Interview Simulation', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
+
 
