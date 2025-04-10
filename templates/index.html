@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Interview Chatbot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    #chat-box {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #fff;
+    }
+    .user, .bot {
+      margin-bottom: 10px;
+    }
+    .user {
+      text-align: right;
+      font-weight: bold;
+    }
+    .bot {
+      text-align: left;
+      color: darkblue;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Interview Chatbot</h1>
+  <div id="chat-box"></div>
+
+  <input type="text" id="textInput" placeholder="Type your question here..." style="width: 60%; padding: 10px;" />
+  <button onclick="sendText()">Send</button>
+  <button onclick="startListening()">🎤 Speak</button>
+
+  <script>
+    function appendMessage(content, sender) {
+      const chatBox = document.getElementById('chat-box');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = sender;
+      msgDiv.innerText = content;
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendText() {
+      const input = document.getElementById("textInput");
+      const message = input.value.trim();
+      if (!message) return;
+
+      appendMessage(message, "user");
+      input.value = "";
+
+      fetch("/chat", {
+        method: "POST",
+        body: JSON.stringify({ message }),
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(response => response.json())
+      .then(data => {
+        appendMessage(data.response, "bot");
+
+        // Play audio response
+        const audio = new Audio("/static/response_audio.mp3");
+        audio.play();
+      });
+    }
+
+    function startListening() {
+      const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        appendMessage(transcript, "user");
+
+        fetch('/chat', {
+          method: 'POST',
+          body: JSON.stringify({ message: transcript }),
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          appendMessage(data.response, "bot");
+
+          // Play audio response
+          const audio = new Audio("/static/response_audio.mp3");
+          audio.play();
+        });
+      };
+
+      recognition.onerror = function(event) {
+        alert("Error during speech recognition: " + event.error);
+      };
+
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
