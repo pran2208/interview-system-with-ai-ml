@@ -91,7 +91,7 @@ AI-Mock-Interview/
 
 ⚙️ Installation & Setup
 1. Clone the repository
-git clone https://github.com/your-username/AI-Mock-Interview.git
+git clone https://github.com/pran2208/interview-system-with-ai-ml
 cd AI-Mock-Interview
 
 2. Setup Backend
